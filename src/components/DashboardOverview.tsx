@@ -12,11 +12,16 @@ import {
   TrendingDown,
   Target
 } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { useFinance } from '../context/FinanceContext';
+import { useAuth } from '../context/AuthContext';
 import SectionHeader from './SectionHeader';
+
 
 const DashboardOverview: React.FC = () => {
   const { stats, transactions } = useFinance();
+  const { user } = useAuth();
+  const firstName = user?.fullName.split(' ')[0] || 'User';
 
   const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#3b82f6', '#8b5cf6'];
 
@@ -29,7 +34,7 @@ const DashboardOverview: React.FC = () => {
   return (
     <div style={{ padding: '2rem 1rem' }}>
       <SectionHeader 
-        title="Welcome Back, Nitin" 
+        title={`Welcome Back, ${firstName}`} 
         subtitle="Here's what's happening with your finances today."
       >
         <div className="card" style={{ padding: '0.75rem 1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -54,57 +59,77 @@ const DashboardOverview: React.FC = () => {
         </div>
       </SectionHeader>
 
-      <div className="grid grid-cols-3 gap-6" style={{ marginBottom: '2.5rem' }}>
-        <div className="card glass-effect" style={{
-          background: 'linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-hover) 100%)',
-          border: 'none',
-          color: 'white'
-        }}>
-          <div className="flex justify-between items-center" style={{ marginBottom: '1rem' }}>
-            <span style={{ opacity: 0.8, fontSize: '0.875rem', fontWeight: 500 }}>TOTAL BALANCE</span>
-            <div style={{ padding: '0.5rem', borderRadius: '50%', background: 'rgba(255,255,255,0.2)' }}>
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ staggerChildren: 0.1, delayChildren: 0.1 }}
+        className="grid grid-cols-3 gap-6" 
+        style={{ marginBottom: '2.5rem' }}
+      >
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          className="card" 
+          style={{
+            background: 'var(--grad-primary)',
+            border: 'none',
+            color: 'white'
+          }}
+        >
+          <div className="flex justify-between items-center" style={{ marginBottom: '1.5rem' }}>
+            <span style={{ opacity: 0.9, fontSize: '0.75rem', fontWeight: 800, letterSpacing: '0.1em' }}>TOTAL BALANCE</span>
+            <div style={{ padding: '0.625rem', borderRadius: '12px', background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(4px)' }}>
               <Wallet size={20} />
             </div>
           </div>
-          <h3 style={{ fontSize: '2rem', fontWeight: 700, marginBottom: '0.5rem' }}>₹{stats.totalBalance.toLocaleString('en-IN')}</h3>
-          <div className="flex items-center gap-1" style={{ fontSize: '0.875rem', opacity: 0.9 }}>
-            {stats.totalBalance > 0 ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
+          <h3 style={{ fontSize: '2.25rem', fontWeight: 800, marginBottom: '0.75rem', letterSpacing: '-0.02em' }}>₹{stats.totalBalance.toLocaleString('en-IN')}</h3>
+          <div className="flex items-center gap-1.5" style={{ fontSize: '0.875rem', fontWeight: 600, background: 'rgba(255,255,255,0.15)', padding: '0.35rem 0.75rem', borderRadius: '8px', width: 'fit-content' }}>
+            {stats.totalBalance > 0 ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
             <span>{Math.abs(Math.floor(stats.totalBalance * 0.15))}% vs last month</span>
           </div>
-        </div>
+        </motion.div>
 
-        <div className="card">
-          <div className="flex justify-between items-center" style={{ marginBottom: '1rem' }}>
-            <span style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', fontWeight: 500 }}>TOTAL INCOME</span>
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          className="card glass-effect"
+        >
+          <div className="flex justify-between items-center" style={{ marginBottom: '1.5rem' }}>
+            <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 800, letterSpacing: '0.1em' }}>TOTAL INCOME</span>
             <div style={{ 
-              padding: '0.5rem', 
-              borderRadius: '50%', 
+              padding: '0.625rem', 
+              borderRadius: '12px', 
               background: 'var(--success-light)',
               color: 'var(--success)'
             }}>
               <ArrowUpRight size={20} />
             </div>
           </div>
-          <h3 style={{ fontSize: '2rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--text-primary)' }}>₹{stats.totalIncome.toLocaleString('en-IN')}</h3>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>from {incomeCount} transactions</p>
-        </div>
+          <h3 style={{ fontSize: '2.25rem', fontWeight: 800, marginBottom: '0.75rem', color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>₹{stats.totalIncome.toLocaleString('en-IN')}</h3>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', fontWeight: 500 }}>from {incomeCount} transactions</p>
+        </motion.div>
 
-        <div className="card">
-          <div className="flex justify-between items-center" style={{ marginBottom: '1rem' }}>
-            <span style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', fontWeight: 500 }}>TOTAL EXPENSES</span>
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          className="card glass-effect"
+        >
+          <div className="flex justify-between items-center" style={{ marginBottom: '1.5rem' }}>
+            <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 800, letterSpacing: '0.1em' }}>TOTAL EXPENSES</span>
             <div style={{ 
-              padding: '0.5rem', 
-              borderRadius: '50%', 
+              padding: '0.625rem', 
+              borderRadius: '12px', 
               background: 'var(--error-light)',
               color: 'var(--error)'
             }}>
               <ArrowDownRight size={20} />
             </div>
           </div>
-          <h3 style={{ fontSize: '2rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--text-primary)' }}>₹{stats.totalExpenses.toLocaleString('en-IN')}</h3>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>across {expenseCount} categories</p>
-        </div>
-      </div>
+          <h3 style={{ fontSize: '2.25rem', fontWeight: 800, marginBottom: '0.75rem', color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>₹{stats.totalExpenses.toLocaleString('en-IN')}</h3>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', fontWeight: 500 }}>across {expenseCount} categories</p>
+        </motion.div>
+      </motion.div>
+
 
       <div className="grid grid-cols-3 gap-6" style={{ marginBottom: '2.5rem' }}>
         <div className="card grid-cols-2" style={{ gridColumn: 'span 2' }}>

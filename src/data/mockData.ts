@@ -15,6 +15,7 @@ export const CATEGORIES = [
   'Transport',
   'Shopping',
   'Entertainment',
+  'Bills',
   'Rent',
   'Utilities',
   'Healthcare',

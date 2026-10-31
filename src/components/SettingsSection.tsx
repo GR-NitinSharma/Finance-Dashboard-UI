@@ -4,6 +4,7 @@ import {
   ShieldCheck, ShieldAlert, Bell, Database, Info, Target
 } from 'lucide-react';
 import { useFinance } from '../context/FinanceContext';
+import { useAuth } from '../context/AuthContext';
 import { INITIAL_TRANSACTIONS } from '../data/mockData';
 import SectionHeader from './SectionHeader';
 
@@ -14,6 +15,8 @@ interface SettingsProps {
 
 const SettingsSection: React.FC<SettingsProps> = ({ theme, toggleTheme }) => {
   const { role, switchRole, transactions } = useFinance();
+  const { user } = useAuth();
+  const userId = user?.id || 'guest';
   const [notifications, setNotifications] = useState(true);
   const [autoSave, setAutoSave] = useState(true);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
@@ -32,12 +35,12 @@ const SettingsSection: React.FC<SettingsProps> = ({ theme, toggleTheme }) => {
   };
 
   const handleResetData = () => {
-    localStorage.setItem('finance_transactions', JSON.stringify(INITIAL_TRANSACTIONS));
+    localStorage.setItem(`finance_transactions_${userId}`, JSON.stringify(INITIAL_TRANSACTIONS));
     window.location.reload();
   };
 
   const handleClearData = () => {
-    localStorage.removeItem('finance_transactions');
+    localStorage.removeItem(`finance_transactions_${userId}`);
     window.location.reload();
   };
 
@@ -98,13 +101,13 @@ const SettingsSection: React.FC<SettingsProps> = ({ theme, toggleTheme }) => {
             </div>
             <div style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
               <img
-                src="https://api.dicebear.com/7.x/miniavs/svg?seed=Nitin"
+                src={`https://api.dicebear.com/7.x/miniavs/svg?seed=${user?.username || 'guest'}`}
                 alt="Avatar"
                 style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'var(--accent-primary)', border: '3px solid var(--border-color)', flexShrink: 0 }}
               />
               <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 700, fontSize: '1.1rem', marginBottom: '0.25rem' }}>Nitin Sharma</div>
-                <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>Aspiring Full Stack Web Developer</div>
+                <div style={{ fontWeight: 700, fontSize: '1.1rem', marginBottom: '0.25rem' }}>{user?.fullName}</div>
+                <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>{user?.profession}</div>
                 <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', padding: '0.3rem 0.75rem', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 700, background: role === 'admin' ? 'var(--info-light)' : 'var(--warning-light)', color: role === 'admin' ? 'var(--info)' : 'var(--warning)' }}>
                   {role === 'admin' ? <ShieldCheck size={12} /> : <ShieldAlert size={12} />}
                   {role.toUpperCase()}

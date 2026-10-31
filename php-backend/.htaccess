@@ -1,0 +1,12 @@
+# ─── Apache URL Rewriting for PHP Backend ────────────────────────────────────
+# Routes all /api/* requests through index.php
+
+Options -Indexes
+RewriteEngine On
+
+# Allow direct file/directory access
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# Route everything through index.php
+RewriteRule ^(.*)$ index.php [QSA,L]

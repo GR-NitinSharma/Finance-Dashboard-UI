@@ -7,7 +7,9 @@ import {
   ShieldCheck,
   ShieldAlert
 } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { useFinance } from '../context/FinanceContext';
+
 
 type Tab = 'dashboard' | 'transactions' | 'insights' | 'settings';
 
@@ -30,36 +32,38 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, onNavigate }) => {
     <div
       className="sidebar glass-effect"
       style={{
-        width: '260px',
+        width: '280px',
         height: '100vh',
         position: 'fixed',
         left: 0,
         top: 0,
         display: 'flex',
         flexDirection: 'column',
-        padding: '2rem 1.5rem',
+        padding: '2.5rem 1.5rem',
         zIndex: 100,
-        borderRight: '1px solid var(--border-color)'
+        borderRight: '1px solid var(--glass-border)',
+        boxShadow: 'none'
       }}
     >
       {/* Logo */}
       <div
         className="logo-container"
-        style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '2.5rem', padding: '0 0.5rem' }}
+        style={{ display: 'flex', alignItems: 'center', gap: '0.875rem', marginBottom: '3rem', padding: '0 0.5rem' }}
       >
         <div style={{
-          width: '40px', height: '40px',
-          background: 'var(--accent-primary)',
-          borderRadius: '12px',
+          width: '42px', height: '42px',
+          background: 'var(--grad-primary)',
+          borderRadius: '14px',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          color: 'white', fontWeight: 'bold', fontSize: '1.25rem', flexShrink: 0
+          color: 'white', fontWeight: 800, fontSize: '1.5rem', flexShrink: 0,
+          boxShadow: '0 4px 12px rgba(99, 102, 241, 0.3)'
         }}>G</div>
-        <span style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>Gravity</span>
+        <span style={{ fontSize: '1.625rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>Gravity</span>
       </div>
 
       {/* Nav */}
       <nav style={{ flex: 1 }}>
-        <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+        <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
           {navItems.map((item) => {
             const isActive = activeTab === item.id;
             return (
@@ -73,34 +77,34 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, onNavigate }) => {
                     width: '100%',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '0.75rem',
-                    padding: '0.75rem 1rem',
-                    borderRadius: 'var(--radius-md)',
+                    gap: '1rem',
+                    padding: '0.875rem 1.25rem',
+                    borderRadius: '16px',
                     color: isActive ? 'var(--accent-primary)' : 'var(--text-secondary)',
-                    background: isActive ? 'rgba(99,102,241,0.1)' : 'transparent',
-                    transition: 'var(--transition)',
+                    background: isActive ? 'var(--accent-soft)' : 'transparent',
+                    transition: 'var(--transition-fast)',
                     fontWeight: isActive ? 700 : 500,
-                    fontSize: '0.9rem',
+                    fontSize: '0.9375rem',
                     border: 'none',
                     cursor: 'pointer',
-                    textAlign: 'left'
-                  }}
-                  onMouseEnter={e => {
-                    if (!isActive) (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-tertiary)';
-                  }}
-                  onMouseLeave={e => {
-                    if (!isActive) (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
+                    textAlign: 'left',
+                    position: 'relative'
                   }}
                 >
-                  <item.icon size={20} />
+                  <item.icon size={20} strokeWidth={isActive ? 2.5 : 2} />
                   <span>{item.name}</span>
                   {isActive && (
-                    <span style={{
-                      marginLeft: 'auto',
-                      width: '6px', height: '6px',
-                      borderRadius: '50%',
-                      background: 'var(--accent-primary)'
-                    }} />
+                    <motion.div 
+                      layoutId="sidebar-active"
+                      style={{
+                        position: 'absolute',
+                        left: '-1.5rem',
+                        width: '4px',
+                        height: '24px',
+                        background: 'var(--accent-primary)',
+                        borderRadius: '0 4px 4px 0'
+                      }} 
+                    />
                   )}
                 </button>
               </li>
@@ -113,35 +117,29 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, onNavigate }) => {
       <div className="sidebar-footer" style={{ marginTop: 'auto' }}>
         <div
           className="card"
-          style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}
+          style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem', background: 'var(--bg-tertiary)', border: 'none' }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
             {role === 'admin'
-              ? <ShieldCheck size={18} style={{ color: 'var(--success)', flexShrink: 0 }} />
-              : <ShieldAlert size={18} style={{ color: 'var(--warning)', flexShrink: 0 }} />
+              ? <ShieldCheck size={20} style={{ color: 'var(--success)', flexShrink: 0 }} />
+              : <ShieldAlert size={20} style={{ color: 'var(--warning)', flexShrink: 0 }} />
             }
-            <span style={{ fontSize: '0.875rem', fontWeight: 'bold' }}>{role.toUpperCase()} Mode</span>
+            <span style={{ fontSize: '0.875rem', fontWeight: 800, color: 'var(--text-primary)' }}>{role.toUpperCase()} MODE</span>
           </div>
-          <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-            {role === 'admin' ? 'Full control over all entries.' : 'View-only access is active.'}
+          <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', lineHeight: 1.4, fontWeight: 500 }}>
+            {role === 'admin' ? 'Full administrative control active.' : 'View-only permissions granted.'}
           </p>
           <button
             onClick={() => switchRole(role === 'admin' ? 'viewer' : 'admin')}
-            style={{
-              width: '100%', padding: '0.5rem',
-              background: 'var(--bg-tertiary)',
-              borderRadius: 'var(--radius-sm)',
-              fontSize: '0.75rem', fontWeight: 'bold',
-              color: 'var(--text-primary)',
-              border: '1px solid var(--border-color)',
-              cursor: 'pointer'
-            }}
+            className="btn btn-secondary"
+            style={{ width: '100%', padding: '0.625rem', fontSize: '0.75rem', borderRadius: '12px' }}
           >
             Switch to {role === 'admin' ? 'Viewer' : 'Admin'}
           </button>
         </div>
       </div>
     </div>
+
   );
 };
 

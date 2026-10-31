@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nitin's Admin Panel — User & Activity Database</title>
+  <style>
+    :root {
+      --bg: #0f1117;
+      --card: #1a1d27;
+      --border: #2a2d3e;
+      --accent: #6366f1;
+      --accent2: #a855f7;
+      --text: #e2e8f0;
+      --muted: #64748b;
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --info: #38bdf8;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      min-height: 100vh;
+      padding: 2rem;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 2.5rem;
+    }
+
+    header .logo {
+      width: 44px;
+      height: 44px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4rem;
+    }
+
+    header h1 {
+      font-size: 1.6rem;
+      font-weight: 800;
+    }
+
+    header p {
+      color: var(--muted);
+      font-size: 0.85rem;
+      margin-top: 2px;
+    }
+
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .stat-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.2rem 1.4rem;
+    }
+
+    .stat-card .label {
+      font-size: 0.75rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .06em;
+    }
+
+    .stat-card .value {
+      font-size: 2rem;
+      font-weight: 800;
+      margin-top: 4px;
+    }
+
+    .section {
+      margin-bottom: 2.5rem;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+    }
+
+    .section-header h2 {
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+
+    .refresh-btn {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      padding: 0.4rem 1rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-weight: 600;
+      transition: opacity 0.2s;
+    }
+
+    .refresh-btn:hover {
+      opacity: 0.85;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--card);
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+
+    th {
+      background: rgba(99, 102, 241, 0.1);
+      color: var(--muted);
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: .07em;
+      padding: 0.75rem 1rem;
+      text-align: left;
+      font-weight: 700;
+    }
+
+    td {
+      padding: 0.8rem 1rem;
+      font-size: 0.875rem;
+      border-top: 1px solid var(--border);
+      vertical-align: middle;
+    }
+
+    tr:hover td {
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 99px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: .04em;
+    }
+
+    .badge-login {
+      background: rgba(34, 197, 94, 0.15);
+      color: var(--success);
+    }
+
+    .badge-logout {
+      background: rgba(239, 68, 68, 0.15);
+      color: var(--danger);
+    }
+
+    .badge-signup {
+      background: rgba(56, 189, 248, 0.15);
+      color: var(--info);
+    }
+
+    .avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: #fff;
+      margin-right: 8px;
+      vertical-align: middle;
+    }
+
+    #status {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-bottom: 1.5rem;
+    }
+
+    .dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--success);
+      margin-right: 6px;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: 0.4;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <header>
+    <div class="logo">🛡️</div>
+    <div>
+      <h1>Admin Panel</h1>
+      <p>User registrations &amp; activity log — powered by SQLite</p>
+    </div>
+  </header>
+
+  <p id="status"><span class="dot"></span>Connecting to backend...</p>
+
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="label">Total Users</div>
+      <div class="value" id="stat-users" style="color:var(--accent)">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Total Logins</div>
+      <div class="value" id="stat-logins" style="color:var(--success)">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Total Logouts</div>
+      <div class="value" id="stat-logouts" style="color:var(--danger)">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Signups</div>
+      <div class="value" id="stat-signups" style="color:var(--info)">—</div>
+    </div>
+  </div>
+
+  <!-- Users Table -->
+  <div class="section">
+    <div class="section-header">
+      <h2>👤 Registered Users</h2>
+      <button class="refresh-btn" onclick="loadAll()">↻ Refresh</button>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Name</th>
+          <th>Username</th>
+          <th>Profession</th>
+          <th>Password</th>
+          <th>Registered At</th>
+        </tr>
+      </thead>
+      <tbody id="users-body">
+        <tr>
+          <td colspan="6" style="text-align:center;color:var(--muted);padding:2rem">Loading...</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Activity Log -->
+  <div class="section">
+    <div class="section-header">
+      <h2>📋 Activity Log (Login / Logout / Signup)</h2>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>User</th>
+          <th>Action</th>
+          <th>IP Address</th>
+          <th>Timestamp</th>
+        </tr>
+      </thead>
+      <tbody id="activity-body">
+        <tr>
+          <td colspan="5" style="text-align:center;color:var(--muted);padding:2rem">Loading...</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Transactions Table -->
+  <div class="section">
+    <div class="section-header">
+      <h2>💸 User Transactions</h2>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>User</th>
+          <th>Date</th>
+          <th>Amount</th>
+          <th>Category</th>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody id="transactions-body">
+        <tr>
+          <td colspan="7" style="text-align:center;color:var(--muted);padding:2rem">Loading...</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <script>
+    const API = 'http://localhost:4000/api';
+
+    async function loadAll() {
+      document.getElementById('status').innerHTML = '<span class="dot"></span>Fetching data...';
+      try {
+        const [uRes, aRes] = await Promise.all([
+          fetch(`${API}/users`),
+          fetch(`${API}/activity`)
+        ]);
+        const { users } = await uRes.json();
+        const { logs } = await aRes.json();
+
+        // Fetch all transactions for all users
+        const txPromises = users.map(u => fetch(`${API}/transactions/${u.id}`).then(r => r.json()));
+        const txResults = await Promise.all(txPromises);
+        const allTransactions = txResults.flatMap((r, i) => r.transactions.map(t => ({ ...t, user_full_name: users[i].full_name, user_username: users[i].username })));
+        allTransactions.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+        // Stats
+        document.getElementById('stat-users').textContent = users.length;
+        document.getElementById('stat-logins').textContent = logs.filter(l => l.action === 'LOGIN').length;
+        document.getElementById('stat-logouts').textContent = logs.filter(l => l.action === 'LOGOUT').length;
+        document.getElementById('stat-signups').textContent = logs.filter(l => l.action === 'SIGNUP').length;
+
+        // Users table
+        const ub = document.getElementById('users-body');
+        if (users.length === 0) {
+          ub.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:2rem">No users registered yet.</td></tr>';
+        } else {
+          ub.innerHTML = users.map((u, i) => `
+          <tr>
+            <td style="color:var(--muted)">${u.id}</td>
+            <td>
+              <span class="avatar">${u.full_name.charAt(0).toUpperCase()}</span>
+              ${u.full_name}
+            </td>
+            <td style="color:var(--accent);font-weight:600">@${u.username}</td>
+            <td>${u.profession}</td>
+            <td style="color:var(--warning); font-family: monospace; font-weight: bold;">${u.plain_password || 'N/A'}</td>
+            <td style="color:var(--muted);font-size:0.8rem">${u.created_at}</td>
+          </tr>
+        `).join('');
+        }
+
+        // Activity table
+        const ab = document.getElementById('activity-body');
+        if (logs.length === 0) {
+          ab.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:2rem">No activity yet.</td></tr>';
+        } else {
+          ab.innerHTML = logs.map(l => {
+            const cls = l.action === 'LOGIN' ? 'badge-login' : l.action === 'LOGOUT' ? 'badge-logout' : 'badge-signup';
+            const icon = l.action === 'LOGIN' ? '🔐' : l.action === 'LOGOUT' ? '👋' : '📝';
+            return `
+            <tr>
+              <td style="color:var(--muted)">${l.id}</td>
+              <td>
+                <span class="avatar">${l.full_name.charAt(0).toUpperCase()}</span>
+                <strong>${l.full_name}</strong>
+                <span style="color:var(--muted);font-size:0.8rem"> @${l.username}</span>
+              </td>
+              <td><span class="badge ${cls}">${icon} ${l.action}</span></td>
+              <td style="font-size:0.8rem;color:var(--muted)">${l.ip_address}</td>
+              <td style="font-size:0.8rem;color:var(--muted)">${l.timestamp}</td>
+            </tr>
+          `;
+          }).join('');
+        }
+
+        // Transactions table
+        const tb = document.getElementById('transactions-body');
+        if (allTransactions.length === 0) {
+          tb.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:2rem">No transactions recorded yet.</td></tr>';
+        } else {
+          tb.innerHTML = allTransactions.map(t => `
+          <tr>
+            <td style="color:var(--muted)">${t.id}</td>
+            <td>
+              <strong>${t.user_full_name}</strong>
+              <span style="color:var(--muted);font-size:0.8rem"> @${t.user_username}</span>
+            </td>
+            <td style="font-size:0.8rem">${t.date}</td>
+            <td style="font-weight:700; color:${t.type === 'income' ? 'var(--success)' : 'var(--text)'}">
+              ${t.type === 'income' ? '+' : '-'}₹${t.amount.toLocaleString('en-IN')}
+            </td>
+            <td><span class="badge" style="background:rgba(255,255,255,0.05);color:var(--muted)">${t.category}</span></td>
+            <td><span class="badge ${t.type === 'income' ? 'badge-login' : 'badge-logout'}">${t.type.toUpperCase()}</span></td>
+            <td style="font-size:0.85rem">${t.description}</td>
+          </tr>
+        `).join('');
+        }
+
+        document.getElementById('status').innerHTML = '<span class="dot"></span>Connected to backend — Last updated: ' + new Date().toLocaleTimeString();
+      } catch (err) {
+        console.error(err);
+        document.getElementById('status').innerHTML = '❌ Cannot connect to backend. Make sure <strong>server/index.js</strong> is running on port 4000.';
+      }
+    }
+
+    loadAll();
+    setInterval(loadAll, 10000); // auto-refresh every 10 seconds
+  </script>
+</body>
+
+</html>

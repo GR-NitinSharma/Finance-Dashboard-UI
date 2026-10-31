@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Search, 
   Filter, 
@@ -8,12 +9,17 @@ import {
   Download,
   AlertCircle,
   MinusCircle,
-  PlusCircle
+  PlusCircle,
+  CheckCircle,
+  XCircle,
+  Loader2
 } from 'lucide-react';
 import { useFinance } from '../context/FinanceContext';
 import type { Transaction } from '../data/mockData';
 import { CATEGORIES } from '../data/mockData';
 import SectionHeader from './SectionHeader';
+
+type Toast = { id: number; type: 'success' | 'error'; message: string };
 
 const TransactionSection: React.FC = () => {
   const { transactions, role, filters, setFilters, deleteTransaction, addTransaction, updateTransaction } = useFinance();
@@ -21,6 +27,15 @@ const TransactionSection: React.FC = () => {
   const [isEditMode, setIsEditMode] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isExporting, setIsExporting] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [formError, setFormError] = useState<string>('');
+  const [toasts, setToasts] = useState<Toast[]>([]);
+
+  const showToast = (type: 'success' | 'error', message: string) => {
+    const id = Date.now();
+    setToasts(prev => [...prev, { id, type, message }]);
+    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 3500);
+  };
 
   const filteredTransactions = useMemo(() => {
     return transactions.filter(t => {
@@ -52,35 +67,59 @@ const TransactionSection: React.FC = () => {
 
   const [newTx, setNewTx] = useState<Omit<Transaction, 'id'>>({
     date: new Date().toISOString().split('T')[0],
-    amount: 0,
+    amount: '' as unknown as number,
     category: 'Food',
     type: 'expense',
     description: ''
   });
 
-  const handleSave = () => {
-    if (newTx.amount <= 0 || !newTx.description) return alert("Please fill all fields correctly.");
-    
-    if (isEditMode && editingId) {
-      updateTransaction(editingId, newTx);
-    } else {
-      addTransaction(newTx);
+  const handleSave = async () => {
+    setFormError('');
+    const amount = Number(newTx.amount);
+    if (!newTx.description.trim()) {
+      setFormError('Please enter a description.');
+      return;
     }
-    
-    setShowModal(false);
-    resetForm();
+    if (!amount || amount <= 0) {
+      setFormError('Please enter a valid amount greater than 0.');
+      return;
+    }
+    if (!newTx.date) {
+      setFormError('Please select a date.');
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const txToSave = { ...newTx, amount };
+      if (isEditMode && editingId) {
+        await updateTransaction(editingId, txToSave);
+        showToast('success', 'Transaction updated successfully!');
+      } else {
+        await addTransaction(txToSave);
+        showToast('success', 'Transaction added successfully!');
+      }
+      setShowModal(false);
+      resetForm();
+    } catch (err) {
+      console.error(err);
+      showToast('error', 'Failed to save transaction. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const resetForm = () => {
     setNewTx({
       date: new Date().toISOString().split('T')[0],
-      amount: 0,
+      amount: '' as unknown as number,
       category: 'Food',
       type: 'expense',
       description: ''
     });
     setIsEditMode(false);
     setEditingId(null);
+    setFormError('');
   };
 
   const openEditModal = (tx: Transaction) => {
@@ -93,6 +132,7 @@ const TransactionSection: React.FC = () => {
     });
     setEditingId(tx.id);
     setIsEditMode(true);
+    setFormError('');
     setShowModal(true);
   };
 
@@ -102,23 +142,41 @@ const TransactionSection: React.FC = () => {
   };
 
   return (
-    <div style={{ padding: '2rem 1rem' }}>
+    <div style={{ padding: '2rem 1rem', position: 'relative' }}>
+      {/* Toast Notifications */}
+      <div style={{ position: 'fixed', bottom: '2rem', right: '2rem', zIndex: 2000, display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+        <AnimatePresence>
+          {toasts.map(toast => (
+            <motion.div
+              key={toast.id}
+              initial={{ opacity: 0, x: 80, scale: 0.9 }}
+              animate={{ opacity: 1, x: 0, scale: 1 }}
+              exit={{ opacity: 0, x: 80, scale: 0.9 }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.75rem',
+                padding: '1rem 1.25rem',
+                borderRadius: 'var(--radius-md)',
+                background: toast.type === 'success' ? 'var(--success)' : 'var(--error)',
+                color: '#fff',
+                fontWeight: 600,
+                fontSize: '0.875rem',
+                boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
+                minWidth: '280px'
+              }}
+            >
+              {toast.type === 'success' ? <CheckCircle size={18} /> : <XCircle size={18} />}
+              {toast.message}
+            </motion.div>
+          ))}
+        </AnimatePresence>
+      </div>
       <SectionHeader title="Transactions" subtitle="Manage and review your financial activity.">
         <button 
           onClick={handleExport}
-          className="card" 
+          className="btn btn-secondary" 
           disabled={isExporting}
-          style={{ 
-            padding: '0.75rem 1.25rem', 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: '0.5rem',
-            background: 'var(--bg-tertiary)',
-            color: 'var(--text-primary)',
-            fontWeight: 600,
-            cursor: isExporting ? 'not-allowed' : 'pointer',
-            opacity: isExporting ? 0.6 : 1
-          }}
         >
           <Download size={18} />
           {isExporting ? 'Exporting...' : 'Export CSV'}
@@ -126,23 +184,14 @@ const TransactionSection: React.FC = () => {
         {role === 'admin' && (
           <button 
             onClick={openAddModal}
-            style={{ 
-              padding: '0.75rem 1.5rem', 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: '0.5rem',
-              background: 'var(--accent-primary)',
-              color: 'white',
-              fontWeight: 600,
-              borderRadius: 'var(--radius-lg)',
-              boxShadow: 'var(--shadow-md)'
-            }}
+            className="btn btn-primary"
           >
             <Plus size={18} />
             New Transaction
           </button>
         )}
       </SectionHeader>
+
 
       <div className="card" style={{ padding: '0', overflow: 'hidden' }}>
         <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--border-color)', display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
@@ -242,21 +291,12 @@ const TransactionSection: React.FC = () => {
                     {tx.type === 'income' ? '+' : '-'}₹{tx.amount.toLocaleString('en-IN')}
                   </td>
                   <td style={{ padding: '1.25rem 1.5rem' }}>
-                    <div style={{ 
-                      display: 'inline-flex', 
-                      alignItems: 'center', 
-                      gap: '0.35rem', 
-                      padding: '0.35rem 0.75rem', 
-                      borderRadius: '12px',
-                      fontSize: '0.75rem',
-                      fontWeight: 700,
-                      background: tx.type === 'income' ? 'var(--success-light)' : 'var(--error-light)',
-                      color: tx.type === 'income' ? 'var(--success)' : 'var(--error)'
-                    }}>
+                    <div className={`badge ${tx.type === 'income' ? 'badge-success' : 'badge-error'}`}>
                       {tx.type === 'income' ? <PlusCircle size={14} /> : <MinusCircle size={14} />}
                       {tx.type.toUpperCase()}
                     </div>
                   </td>
+
                   <td style={{ padding: '1.25rem 1.5rem' }}>
                     <div style={{ display: 'flex', gap: '0.5rem' }}>
                       <button 
@@ -305,86 +345,128 @@ const TransactionSection: React.FC = () => {
           left: 0,
           width: '100%',
           height: '100%',
-          background: 'rgba(0,0,0,0.5)',
-          backdropFilter: 'blur(4px)',
+          background: 'rgba(2, 6, 23, 0.6)',
+          backdropFilter: 'blur(8px)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          zIndex: 1000
+          zIndex: 1000,
+          padding: '1rem'
         }}>
-          <div className="card glass-effect" style={{ width: '100%', maxWidth: '500px', background: 'var(--bg-secondary)' }}>
-             <h3 style={{ marginBottom: '1.5rem', fontSize: '1.5rem' }}>{isEditMode ? 'Edit' : 'New'} Transaction</h3>
-             <div className="flex flex-col gap-4">
+          <motion.div 
+            initial={{ scale: 0.9, opacity: 0, y: 20 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            className="card glass-effect" 
+            style={{ width: '100%', maxWidth: '540px', background: 'var(--bg-secondary)', border: '1px solid var(--glass-border)' }}
+          >
+             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+               <h3 style={{ fontSize: '1.75rem', fontWeight: 800, background: 'var(--grad-primary)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                 {isEditMode ? 'Update' : 'New'} Transaction
+               </h3>
+               <button onClick={() => { setShowModal(false); resetForm(); }} style={{ color: 'var(--text-muted)', background: 'none', padding: '0.5rem', borderRadius: 'var(--radius-sm)' }}><Plus size={24} style={{ transform: 'rotate(45deg)' }} /></button>
+             </div>
+             {/* Inline form error */}
+             <AnimatePresence>
+               {formError && (
+                 <motion.div
+                   initial={{ opacity: 0, y: -8 }}
+                   animate={{ opacity: 1, y: 0 }}
+                   exit={{ opacity: 0, y: -8 }}
+                   style={{
+                     display: 'flex',
+                     alignItems: 'center',
+                     gap: '0.5rem',
+                     padding: '0.75rem 1rem',
+                     borderRadius: 'var(--radius-md)',
+                     background: 'rgba(239,68,68,0.12)',
+                     border: '1px solid rgba(239,68,68,0.3)',
+                     color: 'var(--error)',
+                     fontSize: '0.875rem',
+                     marginBottom: '1.25rem',
+                     fontWeight: 500
+                   }}
+                 >
+                   <AlertCircle size={16} />
+                   {formError}
+                 </motion.div>
+               )}
+             </AnimatePresence>
+
+             <div className="flex flex-col gap-5">
                 <div>
-                   <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.4rem' }}>DESCRIPTION</label>
+                   <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.6rem', letterSpacing: '0.05em' }}>DESCRIPTION</label>
                    <input 
                       type="text" 
-                      placeholder="e.g. Starbucks Coffee" 
+                      className="input"
+                      placeholder="e.g. Monthly Subscription" 
                       value={newTx.description}
                       onChange={(e) => setNewTx({...newTx, description: e.target.value})}
-                      style={{ width: '100%', padding: '0.75rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', background: 'var(--bg-primary)', color: 'var(--text-primary)' }}
                    />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-5">
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.4rem' }}>AMOUNT (₹)</label>
+                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.6rem', letterSpacing: '0.05em' }}>AMOUNT (₹)</label>
                     <input 
                         type="number" 
+                        className="input"
                         value={newTx.amount}
                         onChange={(e) => setNewTx({...newTx, amount: parseFloat(e.target.value) || 0})}
-                        style={{ width: '100%', padding: '0.75rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', background: 'var(--bg-primary)', color: 'var(--text-primary)' }}
                     />
                   </div>
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.4rem' }}>TYPE</label>
+                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.6rem', letterSpacing: '0.05em' }}>TYPE</label>
                     <select 
+                        className="input"
                         value={newTx.type}
                         onChange={(e) => setNewTx({...newTx, type: e.target.value as 'income' | 'expense'})}
-                        style={{ width: '100%', padding: '0.75rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', background: 'var(--bg-primary)', color: 'var(--text-primary)' }}
                     >
                       <option value="expense">Expense</option>
                       <option value="income">Income</option>
                     </select>
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-5">
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.4rem' }}>CATEGORY</label>
+                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.6rem', letterSpacing: '0.05em' }}>CATEGORY</label>
                     <select 
+                        className="input"
                         value={newTx.category}
                         onChange={(e) => setNewTx({...newTx, category: e.target.value})}
-                        style={{ width: '100%', padding: '0.75rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', background: 'var(--bg-primary)', color: 'var(--text-primary)' }}
                     >
                       {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
                     </select>
                   </div>
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.4rem' }}>DATE</label>
+                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.6rem', letterSpacing: '0.05em' }}>DATE</label>
                     <input 
                         type="date" 
+                        className="input"
                         value={newTx.date}
                         onChange={(e) => setNewTx({...newTx, date: e.target.value})}
-                        style={{ width: '100%', padding: '0.75rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', background: 'var(--bg-primary)', color: 'var(--text-primary)' }}
                     />
                   </div>
                 </div>
                 <div className="flex gap-4" style={{ marginTop: '1.5rem' }}>
                    <button 
                     onClick={() => setShowModal(false)}
-                    style={{ flex: 1, padding: '0.75rem', borderRadius: 'var(--radius-md)', background: 'var(--bg-tertiary)', color: 'var(--text-primary)', fontWeight: 600 }}
+                    className="btn btn-secondary"
+                    style={{ flex: 1 }}
                    >
                      Cancel
                    </button>
                    <button 
                     onClick={handleSave}
-                    style={{ flex: 1, padding: '0.75rem', borderRadius: 'var(--radius-md)', background: 'var(--accent-primary)', color: 'white', fontWeight: 600 }}
+                    className="btn btn-primary"
+                    style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+                    disabled={isSaving}
                    >
-                     {isEditMode ? 'Update' : 'Add'} Transaction
+                     {isSaving ? <><Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> Saving...</> : (isEditMode ? 'Update' : 'Add') + ' Transaction'}
                    </button>
                 </div>
              </div>
-          </div>
+          </motion.div>
         </div>
+
       )}
     </div>
   );

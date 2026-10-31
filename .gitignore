@@ -22,3 +22,27 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+
+# Private credentials
+*.pem
+*.key
+
+# Temporary files and database backups
+*.log
+*.tmp
+*.bak
+
+# SQLite databases and temporary database files
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+
+# Netlify local state
+.netlify/
